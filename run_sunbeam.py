@@ -265,7 +265,7 @@ def start_server_in_silo(github_api, silo, server, deployment_branch, addon):
     return runid
 
 
-def get_failed_plugin(github_api):
+def get_failed_plugin(github_api, runid):
     matching_lines = github_api.find_step_logs(
         run_id=runid,
         step_name_contains="sunbeam_enable_plugins_all",
@@ -288,7 +288,7 @@ def collect_run_data(github_api, server, runid):
             status = step["name"]
         output += f",{step['name']},{step['status']},{step['elapsed']}"
     if status == "sunbeam_enable_plugins_all":
-        status = get_failed_plugin(github_api)
+        status = get_failed_plugin(github_api, runid)
     output = f"{server},{status},{runid}{output}\n"
     return output
 
