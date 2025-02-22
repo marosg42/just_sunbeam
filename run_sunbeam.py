@@ -313,11 +313,9 @@ def update_stop_file(silo, server):
 def get_last_server(silo):
     file_path = Path(f"{silo}.stop")
     if not file_path.exists():
-        return
-    print("here")
+        return None
     with open(file_path, "r") as f:
         server = f.read()
-    print(server)
     file_path.unlink(missing_ok=True)
     return server
 
