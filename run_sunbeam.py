@@ -315,7 +315,7 @@ def get_last_server(silo):
     if not file_path.exists():
         return None
     with open(file_path, "r") as f:
-        server = f.read()
+        server = f.read().rstrip()
     file_path.unlink(missing_ok=True)
     return server
 
@@ -335,9 +335,9 @@ if __name__ == "__main__":
     if last_server := get_last_server(silo):
         print(f"Last used server was {last_server}")
         for server in servers:
+            print(f"Skipping {server}")
             if server == last_server:
                 break
-            print(f"Skipping {server}")
 
     github_api = GitHubWorkflowAPI(TOKEN, OWNER, REPO)
 
