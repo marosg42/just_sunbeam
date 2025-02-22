@@ -9,6 +9,7 @@ import sys
 import time
 
 from dotenv import load_dotenv
+from pathlib import Path
 from urllib.request import urlopen
 
 
@@ -199,7 +200,6 @@ def get_next_server(filename):
             with open(filename, "rt") as f:
                 while line := f.readline().strip():
                     servers.append(line)
-            servers.reverse()
             continue
 
 
@@ -298,6 +298,30 @@ def save_data(output, filename):
         f.write(output)
 
 
+def stop_requested(silo):
+    file_path = Path(f"{silo}.stop")
+    return file_path.exists()
+
+
+def update_stop_file(silo, server):
+    file_path = Path(f"{silo}.stop")
+    if server:
+        with open(file_path, "w") as f:
+            f.write(server)
+
+
+def get_last_server(silo):
+    file_path = Path(f"{silo}.stop")
+    if not file_path.exists():
+        return
+    print("here")
+    with open(file_path, "r") as f:
+        server = f.read()
+    print(server)
+    file_path.unlink(missing_ok=True)
+    return server
+
+
 load_dotenv()
 TOKEN = os.environ.get("TOKEN")
 OWNER = os.environ["OWNER"]
@@ -310,15 +334,25 @@ ADDON = os.environ["ADDON"]
 if __name__ == "__main__":
     silo = sys.argv[1]
     servers = get_next_server(f"{silo}.txt")
+    if last_server := get_last_server(silo):
+        print(f"Last used server was {last_server}")
+        for server in servers:
+            if server == last_server:
+                break
+            print(f"Skipping {server}")
 
     github_api = GitHubWorkflowAPI(TOKEN, OWNER, REPO)
 
     while True:
         wait_until_silo_is_available(github_api, silo)
+        if stop_requested(silo):
+            update_stop_file(silo, last_server)
+            break
         if not (server := get_available_server(servers)):
             print("No server available, wating 10 minutes")
             time.sleep(600)
             continue
+        last_server = server
         runid = start_server_in_silo(github_api, silo, server, DEPLOYMENT_BRANCH, ADDON)
         if not runid:
             print("Something went south")
