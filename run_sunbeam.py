@@ -159,6 +159,7 @@ class GitHubWorkflowAPI:
                     "status": status,
                     "conclusion": conclusion,
                     "url": run_data.get("html_url"),
+                    "run_started_at": run_data.get("run_started_at"),
                 }
 
             time.sleep(poll_interval)
@@ -277,10 +278,12 @@ def get_failed_plugin(github_api, runid):
 
 
 def collect_run_data(github_api, server, runid):
-    status = github_api.wait_for_run_completion(runid)["conclusion"]
+    result = github_api.wait_for_run_completion(runid)
+    status = result["conclusion"]
+    started_at = result["run_started_at"]
     for step in github_api.get_run_steps(runid)[0]["steps"]:
         print(
-            f"{step['name']:40}: {step['status']:10}\t{step['started_at']:10}\t{step['completed_at']:10}\t{step['elapsed']:10}"
+            f"{step['name']:60}: {step['status']:10}\t{step['started_at']:10}\t{step['completed_at']:10}\t{step['elapsed']:10}"
         )
     output = ""
     for step in github_api.get_run_steps(runid)[0]["steps"]:
@@ -289,7 +292,7 @@ def collect_run_data(github_api, server, runid):
         output += f",{step['name']},{step['status']},{step['elapsed']}"
     if status == "sunbeam_enable_plugins_all":
         status = get_failed_plugin(github_api, runid)
-    output = f"{server},{status},{runid}{output}\n"
+    output = f"{server},{status},{runid}{output},{started_at}\n"
     return output
 
 
